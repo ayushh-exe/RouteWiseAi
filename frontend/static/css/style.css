@@ -1,0 +1,147 @@
+/* General Styles */
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    background-color: #f5f7fa;
+    margin: 0;
+    padding: 0;
+    color: #202124;
+}
+
+/* Header */
+header {
+    background-color: #202124;
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+nav a {
+    color: #8ab4f8;
+    margin-left: 1.5rem;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: color 0.2s ease-in-out;
+}
+
+nav a:hover {
+    color: #e8eaed;
+}
+
+/* Main Container */
+.container {
+    padding: 2rem 3rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Card Layout */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.card {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgb(32 33 36 / 0.28);
+    padding: 1.8rem 2rem;
+    transition: box-shadow 0.3s ease;
+    cursor: default;
+}
+
+.card:hover {
+    box-shadow: 0 4px 15px rgb(32 33 36 / 0.35);
+}
+
+.card h3 {
+    margin-top: 0;
+    font-weight: 500;
+    font-size: 1.3rem;
+    color: #202124;
+}
+
+/* Buttons */
+.card button {
+    margin-top: 1rem;
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.3rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 1px 3px rgb(26 115 232 / 0.5);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card button:hover {
+    background-color: #155ab6;
+    box-shadow: 0 4px 8px rgb(21 90 182 / 0.6);
+}
+
+/* Forms */
+form label {
+    display: block;
+    margin-top: 1.25rem;
+    font-weight: 500;
+    font-size: 1rem;
+    color: #5f6368;
+}
+
+form input, form textarea {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    margin-top: 0.3rem;
+    border: 1px solid #dadce0;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: #202124;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+}
+
+form input:focus, form textarea:focus {
+    border-color: #1a73e8;
+    outline: none;
+    box-shadow: 0 0 6px rgba(26, 115, 232, 0.3);
+}
+
+/* Output Sections */
+#delayOutput, #routeOutput {
+    margin-top: 1.5rem;
+    padding: 1.2rem 1.5rem;
+    background-color: #e8f0fe;
+    border-left: 6px solid #1a73e8;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: #1967d2;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgb(26 115 232 / 0.25);
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+    }
+    nav a {
+        margin-left: 0;
+        margin-top: 0.75rem;
+    }
+    .container {
+        padding: 1rem 1.5rem;
+    }
+    .card {
+        padding: 1rem 1.2rem;
+    }
+}

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RouteWise AI</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+  />
+  <style>
+    /* Reset + base styles */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #121212;
+      color: #eee;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background-color: #1f2937;
+      color: #f9fafb;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    }
+    header nav a {
+      color: #9ca3af;
+      margin-left: 1rem;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+    header nav a:hover {
+      color: #2563eb;
+    }
+    .container {
+      flex-grow: 1;
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    h1 {
+      grid-column: span 2;
+      font-weight: 700;
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+      color: #3b82f6;
+      text-align: center;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 0 15px #2563ebaa;
+      display: flex;
+      flex-direction: column;
+    }
+    .card h3 {
+      margin-top: 0;
+      color: #60a5fa;
+    }
+    form label {
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      margin-top: 0.3rem;
+      border-radius: 8px;
+      border: none;
+      background: #334155;
+      color: #d1d5db;
+      font-size: 1rem;
+      resize: vertical;
+    }
+    input[type="text"]::placeholder,
+    textarea::placeholder {
+      color: #64748b;
+    }
+    button {
+      margin-top: 1rem;
+      background: #2563eb;
+      border: none;
+      color: white;
+      font-weight: 700;
+      padding: 0.6rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      font-size: 1.1rem;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    #delayOutput,
+    #routeOutput {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #2563eb33;
+      border-left: 5px solid #2563eb;
+      border-radius: 6px;
+      color: #e0e7ff;
+      font-weight: 600;
+      min-height: 70px;
+    }
+    #map {
+      grid-column: span 2;
+      margin-top: 2rem;
+      height: 450px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #2563ebcc;
+    }
+    .traffic-badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-weight: 700;
+      color: #121212;
+      margin-left: 0.5rem;
+      font-size: 0.9rem;
+    }
+    @media (max-width: 700px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        grid-column: span 1;
+      }
+      #map {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div><strong>RouteWise AI</strong></div>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">Logout</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h1>Welcome to RouteWise AI!</h1>
+
+    <section class="card" aria-label="Predict Travel Delay">
+      <h3>🛣️ Predict Travel Delay</h3>
+      <p>Estimate traffic delays between any two places.</p>
+      <form id="delayForm" aria-describedby="delayOutput" novalidate>
+        <label for="origin">Origin:</label>
+        <input type="text" id="origin" name="origin" required placeholder="Enter origin address" />
+        <label for="destination">Destination:</label>
+        <input
+          type="text"
+          id="destination"
+          name="destination"
+          required
+          placeholder="Enter destination address"
+        />
+        <label for="timestamp">Timestamp:</label>
+        <input
+          type="text"
+          id="timestamp"
+          name="timestamp"
+          class="datetime"
+          placeholder="Select date & time"
+          required
+          autocomplete="off"
+        />
+        <button type="submit">Predict Delay</button>
+      </form>
+      <div id="delayOutput" role="region" aria-live="polite"></div>
+    </section>
+
+    <section class="card" aria-label="Optimize Route">
+      <h3>📍 Optimize Route</h3>
+      <p>Enter multiple stops (one per line) to get the best order.</p>
+      <form id="routeForm" aria-describedby="routeOutput" novalidate>
+        <label for="stops">Stops:</label>
+        <textarea
+          id="stops"
+          name="stops"
+          rows="6"
+          placeholder="Enter one address per line"
+          required
+        ></textarea>
+        <button type="submit">Optimize Route</button>
+      </form>
+      <div id="routeOutput" role="region" aria-live="polite"></div>
+    </section>
+
+    <div id="map" aria-label="Map showing routes"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    flatpickr(".datetime", {
+      enableTime: true,
+      dateFormat: "Y-m-d H:i",
+      time_24hr: true,
+      minDate: "today"
+    });
+
+    const API_BASE = "http://127.0.0.1:8000";
+
+    // Initialize map centered on India
+    const map = L.map("map").setView([20.5937, 78.9629], 5);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    let routeLayer = null;
+
+    // Geocode address to lat/lng using TomTom API
+    async function geocode(address) {
+      const tomtomKey = "y3lqXrAZjVCThGRsEFVLiiJb5GSUpmI1";
+      try {
+        const response = await axios.get(
+          `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(address)}.json`,
+          {
+            params: { key: tomtomKey, limit: 1 },
+          }
+        );
+        const results = response.data.results;
+        if (results.length === 0) return null;
+        return [results[0].position.lat, results[0].position.lon];
+      } catch {
+        return null;
+      }
+    }
+
+    // Draw route polyline on map from array of lat/lng points
+    function drawRouteOnMap(points) {
+      if (routeLayer) {
+        map.removeLayer(routeLayer);
+      }
+      routeLayer = L.polyline(points, { color: "#2563eb", weight: 5, opacity: 0.8 }).addTo(map);
+      map.fitBounds(routeLayer.getBounds());
+    }
+
+    // Fetch route points between origin and destination using TomTom Routing API (with traffic)
+    async function fetchRoutePoints(originCoords, destinationCoords) {
+      const tomtomKey = "y3lqXrAZjVCThGRsEFVLiiJb5GSUpmI1";
+      const from = originCoords.join(",");
+      const to = destinationCoords.join(",");
+      try {
+        const response = await axios.get(
+          `https://api.tomtom.com/routing/1/calculateRoute/${from}:${to}/json`,
+          {
+            params: {
+              key: tomtomKey,
+              traffic: true,
+              travelMode: "car",
+            },
+          }
+        );
+        const points = response.data.routes[0].legs[0].points;
+        return points.map((p) => [p.latitude, p.longitude]);
+      } catch {
+        return [];
+      }
+    }
+
+    // Traffic level descriptions
+    function getTrafficDescription(level) {
+      if (level >= 8) return "Severe Traffic";
+      if (level >= 6) return "Heavy Traffic";
+      if (level >= 4) return "Moderate Traffic";
+      if (level >= 2) return "Light Traffic";
+      return "Free Flowing";
+    }
+
+    // Traffic color for styling
+    function getTrafficColor(level) {
+      if (level >= 8) return "darkred";
+      if (level >= 6) return "orangered";
+      if (level >= 4) return "orange";
+      if (level >= 2) return "yellowgreen";
+      return "green";
+    }
+
+    // Handle delay prediction form submit
+    document.getElementById("delayForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const origin = document.getElementById("origin").value.trim();
+      const destination = document.getElementById("destination").value.trim();
+      const timestamp = document.getElementById("timestamp").value.trim();
+      const output = document.getElementById("delayOutput");
+
+      if (!origin || !destination || !timestamp) {
+        output.textContent = "Please fill all fields.";
+        return;
+      }
+
+      output.textContent = "Predicting delay...";
+
+      try {
+        const res = await axios.post(`${API_BASE}/predict-delay`, {
+          origin,
+          destination,
+          timestamp,
+        });
+
+        if (res.data.error) {
+          output.innerHTML = `<span style="color:#f87171;">Error: ${res.data.error}</span>`;
+          return;
+        }
+
+        const {
+          predicted_delay_minutes,
+          traffic_level,
+          weather,
+          base_travel_minutes,
+          total_estimated_time,
+        } = res.data;
+
+        const trafficDesc = getTrafficDescription(traffic_level);
+        const trafficColor = getTrafficColor(traffic_level);
+
+        output.innerHTML = `
+          <strong>Predicted Delay:</strong> ${predicted_delay_minutes.toFixed(2)} min<br>
+          <strong>Traffic Level:</strong> 
+            <span class="traffic-badge" style="background-color: ${trafficColor};">${trafficDesc} (${traffic_level} / 10)</span><br>
+          <strong>Weather:</strong> ${weather}<br>
+          <strong>Base Travel Time:</strong> ${base_travel_minutes.toFixed(1)} min<br>
+          <strong>Total Estimated Time:</strong> ${total_estimated_time.toFixed(1)} min
+        `;
+
+        // Show route on map
+        const originCoords = await geocode(origin);
+        const destinationCoords = await geocode(destination);
+        if (originCoords && destinationCoords) {
+          const routePoints = await fetchRoutePoints(originCoords, destinationCoords);
+          if (routePoints.length > 0) drawRouteOnMap(routePoints);
+        }
+      } catch (err) {
+        output.innerHTML = `<span style="color:#f87171;">Request failed: ${err.message}</span>`;
+      }
+    });
+
+    // Handle route optimization form submit
+    document.getElementById("routeForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const stopsText = document.getElementById("stops").value.trim();
+      const output = document.getElementById("routeOutput");
+
+      if (!stopsText) {
+        output.textContent = "Please enter at least one stop.";
+        return;
+      }
+
+      output.textContent = "Optimizing route...";
+
+      const stops = stopsText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((address) => ({ address }));
+
+      try {
+        const res = await axios.post(`${API_BASE}/optimize-route`, {
+          stops,
+        });
+
+        if (res.data.error) {
+          output.innerHTML = `<span style="color:#f87171;">Error: ${res.data.error}</span>`;
+          return;
+        }
+
+        output.innerHTML = `
+          <strong>Original Order:</strong><br>${res.data.original_order.join(
+            "<br>"
+          )}<br><br>
+          <strong>Optimized Order:</strong><br>${res.data.optimized_order.join("<br>")}
+        `;
+      } catch (err) {
+        output.innerHTML = `<span style="color:#f87171;">Request failed: ${err.message}</span>`;
+      }
+    });
+  </script>
+</body>
+</html>

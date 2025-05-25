@@ -1,0 +1,26 @@
+# Core Backend Framework
+fastapi
+
+# ASGI Server for running FastAPI
+uvicorn
+
+# Data Handling & Processing
+pandas
+numpy
+
+# Machine Learning Libraries
+scikit-learn
+
+# Optimization Algorithms
+networkx
+
+# API Requests
+requests
+
+# Environment Variables Handling
+python-dotenv
+
+# Logging & Debugging
+loguru
+
+
