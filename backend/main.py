@@ -1,4 +1,5 @@
-#PYTHONPATH=. uvicorn backend.main:app --reload
+#to run- PYTHONPATH=. uvicorn backend.main:app --reload
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
