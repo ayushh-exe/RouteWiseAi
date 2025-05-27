@@ -1,402 +1,967 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RouteWise AI</title>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
-  />
+  <title>RouteWise AI - Smart Transportation</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder@2.4.0/dist/Control.Geocoder.css" />
   <style>
-    /* Reset + base styles */
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #121212;
-      color: #eee;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      --dark-gradient: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --shadow-glow: 0 8px 32px rgba(102, 126, 234, 0.15);
+      --shadow-strong: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
       margin: 0;
       padding: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      box-sizing: border-box;
     }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--dark-gradient);
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: -1;
+      opacity: 0.6;
+    }
+
+    .particle {
+      position: absolute;
+      background: radial-gradient(circle, rgba(102, 126, 234, 0.8) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .particle:nth-child(1) { width: 80px; height: 80px; top: 20%; left: 10%; animation-delay: 0s; }
+    .particle:nth-child(2) { width: 60px; height: 60px; top: 60%; left: 80%; animation-delay: 2s; }
+    .particle:nth-child(3) { width: 100px; height: 100px; top: 80%; left: 20%; animation-delay: 4s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); opacity: 0.6; }
+      50% { transform: translateY(-20px); opacity: 1; }
+    }
+
     header {
-      background-color: #1f2937;
-      color: #f9fafb;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
       padding: 1rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+      z-index: 1000;
     }
-    header nav a {
-      color: #9ca3af;
-      margin-left: 1rem;
-      text-decoration: none;
-      font-weight: 600;
-      transition: color 0.3s ease;
+
+    .header-scroll {
+      background: rgba(0, 0, 0, 0.95);
+      box-shadow: var(--shadow-glow);
     }
-    header nav a:hover {
-      color: #2563eb;
-    }
-    .container {
-      flex-grow: 1;
-      max-width: 960px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-    }
-    h1 {
-      grid-column: span 2;
-      font-weight: 700;
-      font-size: 2.2rem;
-      margin-bottom: 1rem;
-      color: #3b82f6;
-      text-align: center;
-    }
-    .card {
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 0 15px #2563ebaa;
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      
+      color: transparent;
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
     }
+
+    nav a {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 25px;
+      transition: all 0.3s ease;
+    }
+
+    nav a:hover {
+      color: white;
+      background: var(--primary-gradient);
+    }
+
+    .container {
+      margin-top: 100px;
+      padding: 2rem;
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 8vw, 5rem);
+      font-weight: 900;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+       background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.7);
+      max-width: 600px;
+      margin: 1rem auto;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 2rem;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-strong);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+    }
+
     .card h3 {
-      margin-top: 0;
-      color: #60a5fa;
+      font-size: 1.4rem;
+      font-weight: 700;
     }
-    form label {
-      margin-top: 1rem;
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
       font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
     }
-    input[type="text"],
-    textarea {
+
+    input, textarea {
       width: 100%;
-      padding: 0.5rem 0.75rem;
-      margin-top: 0.3rem;
+      padding: 0.8rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
       border-radius: 8px;
-      border: none;
-      background: #334155;
-      color: #d1d5db;
+      color: #ffffff;
       font-size: 1rem;
-      resize: vertical;
     }
-    input[type="text"]::placeholder,
-    textarea::placeholder {
-      color: #64748b;
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(102, 126, 234, 0.5);
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
     }
-    button {
-      margin-top: 1rem;
-      background: #2563eb;
+
+    .btn {
+      background: var(--primary-gradient);
       border: none;
       color: white;
-      font-weight: 700;
-      padding: 0.6rem;
-      border-radius: 10px;
+      font-weight: 600;
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
       cursor: pointer;
-      transition: background 0.3s ease;
-      font-size: 1.1rem;
+      font-size: 1rem;
+      width: 100%;
+      margin-top: 1rem;
+      transition: all 0.3s ease;
     }
-    button:hover {
-      background: #1d4ed8;
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-glow);
     }
-    #delayOutput,
-    #routeOutput {
+
+    .btn.loading::after {
+      content: '';
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid white;
+      border-top: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .output-panel {
       margin-top: 1rem;
       padding: 1rem;
-      background: #2563eb33;
-      border-left: 5px solid #2563eb;
-      border-radius: 6px;
-      color: #e0e7ff;
-      font-weight: 600;
-      min-height: 70px;
+      background: rgba(0, 0, 0, 0.3);
+      border-left: 4px solid var(--accent-gradient);
+      border-radius: 8px;
+      min-height: 60px;
     }
-    #map {
-      grid-column: span 2;
-      margin-top: 2rem;
-      height: 450px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px #2563ebcc;
-    }
+
+    .success { border-left-color: #10b981; background: rgba(16, 185, 129, 0.1); }
+    .error { border-left-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
     .traffic-badge {
-      display: inline-block;
-      padding: 0.2rem 0.6rem;
-      border-radius: 12px;
-      font-weight: 700;
-      color: #121212;
-      margin-left: 0.5rem;
-      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      margin: 0.5rem 0;
+      border: 1px solid var(--glass-border);
     }
-    @media (max-width: 700px) {
-      .container {
+
+    .map-container {
+      grid-column: 1 / -1;
+      margin-top: 2rem;
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow-strong);
+      background: var(--glass-bg);
+      height: 500px;
+    }
+
+    #map {
+      height: 100%;
+      border-radius: 16px;
+      z-index: 1;
+    }
+
+    .map-overlay {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      padding: 1rem;
+      color: white;
+      z-index: 1000;
+      border: 1px solid var(--glass-border);
+      max-width: 250px;
+    }
+
+    .map-controls {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .control-button {
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 0.5rem;
+      color: white;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .control-button:hover {
+      background: rgba(102, 126, 234, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .control-button.active {
+      background: var(--primary-gradient);
+    }
+
+    .map-stats {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      right: 1rem;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      padding: 0.8rem;
+      color: white;
+      z-index: 1000;
+      border: 1px solid var(--glass-border);
+      display: none;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #4facfe;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.7);
+      text-transform: uppercase;
+    }
+
+    .map-loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 1rem;
+      z-index: 1001;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .map-loading i {
+      animation: spin 1s linear infinite;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      color: white;
+      border: 1px solid var(--glass-border);
+    }
+
+    .leaflet-popup-tip {
+      background: rgba(0, 0, 0, 0.9);
+      border: 1px solid var(--glass-border);
+    }
+
+    .custom-marker {
+      background: var(--primary-gradient);
+      border: 2px solid white;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+    }
+
+    .custom-cluster {
+      background: var(--primary-gradient);
+      border-radius: 50%;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      border: 2px solid white;
+      width: 30px;
+      height: 30px;
+    }
+
+    .animated-route {
+      stroke-dasharray: 10;
+      stroke-dashoffset: 10;
+      animation: dash 1.5s linear infinite;
+    }
+
+    @keyframes dash {
+      to { stroke-dashoffset: 0; }
+    }
+
+    @media (max-width: 768px) {
+      .cards-grid {
         grid-template-columns: 1fr;
       }
-      h1 {
-        grid-column: span 1;
+
+      .container {
+        padding: 1rem;
       }
-      #map {
-        grid-column: span 1;
+
+      .map-container {
+        height: 400px;
+      }
+
+      .map-controls {
+        flex-direction: row;
+        flex-wrap: wrap;
+        top: 0.5rem;
+        right: 0.5rem;
+      }
+
+      .control-button {
+        padding: 0.4rem;
+        font-size: 0.8rem;
+        min-width: 70px;
+      }
+
+      .map-stats {
+        grid-template-columns: 1fr 1fr;
+        bottom: 0.5rem;
+        left: 0.5rem;
+        right: 0.5rem;
       }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div><strong>RouteWise AI</strong></div>
+  <div class="bg-animation">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+
+  <header id="header">
+    <div class="logo"><i class="fas fa-route"></i> RouteWise AI</div>
     <nav>
-      <a href="#">Dashboard</a>
-      <a href="#">Logout</a>
+      <a href="#"><i class="fas fa-chart-line"></i> Dashboard</a>
+      <a href="#"><i class="fas fa-user"></i> Profile</a>
+      <a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </nav>
   </header>
 
   <main class="container">
-    <h1>Welcome to RouteWise AI!</h1>
-
-    <section class="card" aria-label="Predict Travel Delay">
-      <h3>🛣️ Predict Travel Delay</h3>
-      <p>Estimate traffic delays between any two places.</p>
-      <form id="delayForm" aria-describedby="delayOutput" novalidate>
-        <label for="origin">Origin:</label>
-        <input type="text" id="origin" name="origin" required placeholder="Enter origin address" />
-        <label for="destination">Destination:</label>
-        <input
-          type="text"
-          id="destination"
-          name="destination"
-          required
-          placeholder="Enter destination address"
-        />
-        <label for="timestamp">Timestamp:</label>
-        <input
-          type="text"
-          id="timestamp"
-          name="timestamp"
-          class="datetime"
-          placeholder="Select date & time"
-          required
-          autocomplete="off"
-        />
-        <button type="submit">Predict Delay</button>
-      </form>
-      <div id="delayOutput" role="region" aria-live="polite"></div>
+    <section class="hero">
+      <h1>RouteWise AI</h1>
+      <p>Optimize your travel with AI-powered delay prediction and route planning.</p>
     </section>
 
-    <section class="card" aria-label="Optimize Route">
-      <h3>📍 Optimize Route</h3>
-      <p>Enter multiple stops (one per line) to get the best order.</p>
-      <form id="routeForm" aria-describedby="routeOutput" novalidate>
-        <label for="stops">Stops:</label>
-        <textarea
-          id="stops"
-          name="stops"
-          rows="6"
-          placeholder="Enter one address per line"
-          required
-        ></textarea>
-        <button type="submit">Optimize Route</button>
-      </form>
-      <div id="routeOutput" role="region" aria-live="polite"></div>
-    </section>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon"><i class="fas fa-clock"></i></div>
+          <h3>Delay Prediction</h3>
+        </div>
+        <form id="delayForm">
+          <div class="form-group">
+            <label for="origin"><i class="fas fa-map-marker-alt"></i> Origin</label>
+            <input type="text" id="origin" name="origin" required placeholder="Starting point" list="origin-list" />
+            <datalist id="origin-list"></datalist>
+          </div>
+          <div class="form-group">
+            <label for="destination"><i class="fas fa-flag-checkered"></i> Destination</label>
+            <input type="text" id="destination" name="destination" required placeholder="Destination" list="destination-list" />
+            <datalist id="destination-list"></datalist>
+          </div>
+          <div class="form-group">
+            <label for="timestamp"><i class="fas fa-calendar-alt"></i> Departure Time</label>
+            <input type="text" id="timestamp" name="timestamp" class="datetime" placeholder="Select date & time" required />
+          </div>
+          <button type="submit" class="btn"><i class="fas fa-brain"></i> Analyze Route</button>
+        </form>
+        <div id="delayOutput" class="output-panel"></div>
+      </div>
 
-    <div id="map" aria-label="Map showing routes"></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon"><i class="fas fa-route"></i></div>
+          <h3>Route Optimization</h3>
+        </div>
+        <form id="routeForm">
+          <div class="form-group">
+            <label for="stops"><i class="fas fa-list-ol"></i> Destinations</label>
+            <textarea id="stops" name="stops" rows="4" placeholder="One destination per line" required></textarea>
+          </div>
+          <button type="submit" class="btn"><i class="fas fa-magic"></i> Optimize Route</button>
+        </form>
+        <div id="routeOutput" class="output-panel"></div>
+      </div>
+    </div>
+
+    <div class="map-container">
+      <div class="map-loading" id="mapLoading"><i class="fas fa-spinner"></i> Loading map...</div>
+      <div class="map-controls">
+        <div class="control-button active" id="standardView"><i class="fas fa-map"></i> Standard</div>
+        <div class="control-button" id="terrainView"><i class="fas fa-mountain"></i> Terrain</div>
+        <div class="control-button" id="darkView"><i class="fas fa-moon"></i> Dark</div>
+        <div class="control-button" id="trafficToggle"><i class="fas fa-car"></i> Traffic</div>
+        <div class="control-button" id="fullscreenBtn"><i class="fas fa-expand"></i></div>
+      </div>
+      <div class="map-overlay">
+        <h4><i class="fas fa-map"></i> Route Visualization</h4>
+        <p>Real-time traffic and optimized routes</p>
+      </div>
+      <div id="map"></div>
+      <div class="map-stats" id="mapStats">
+        <div class="stat-item">
+          <span class="stat-value" id="totalDistance">--</span>
+          <span class="stat-label">Distance</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="totalTime">--</span>
+          <span class="stat-label">Time</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="trafficStatus">--</span>
+          <span class="stat-label">Traffic</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="routeType">--</span>
+          <span class="stat-label">Route</span>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet-control-geocoder@2.4.0/dist/Control.Geocoder.js"></script>
   <script>
-    flatpickr(".datetime", {
-      enableTime: true,
-      dateFormat: "Y-m-d H:i",
-      time_24hr: true,
-      minDate: "today"
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        initializeFlatpickr();
+        initializeMap();
+        addScrollEffects();
+        addFormHandlers();
+        setupMapControls();
+        addAutocomplete();
+      } catch (error) {
+        console.error('Initialization error:', error);
+        showError('Failed to load application. Please refresh or check your connection.');
+      }
     });
 
+    function initializeFlatpickr() {
+      flatpickr(".datetime", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        time_24hr: true,
+        minDate: "today"
+      });
+    }
+
+    function addScrollEffects() {
+      const header = document.getElementById('header');
+      window.addEventListener('scroll', () => {
+        header.classList.toggle('header-scroll', window.scrollY > 50);
+      });
+    }
+
     const API_BASE = "http://127.0.0.1:8000";
+    const TOMTOM_KEY = "y3lqXrAZjVCThGRsEFVLiiJb5GSUpmI1";
+    let map = null, routeLayer = null, trafficLayer = null, markers = null;
 
-    // Initialize map centered on India
-    const map = L.map("map").setView([20.5937, 78.9629], 5);
+    function initializeMap() {
+      const mapLoading = document.getElementById('mapLoading');
+      setTimeout(() => mapLoading.style.display = 'none', 1000);
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(map);
-
-    let routeLayer = null;
-
-    // Geocode address to lat/lng using TomTom API
-    async function geocode(address) {
-      const tomtomKey = "y3lqXrAZjVCThGRsEFVLiiJb5GSUpmI1";
       try {
-        const response = await axios.get(
-          `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(address)}.json`,
-          {
-            params: { key: tomtomKey, limit: 1 },
-          }
-        );
-        const results = response.data.results;
-        if (results.length === 0) return null;
-        return [results[0].position.lat, results[0].position.lon];
-      } catch {
+        map = L.map("map", {
+          zoomControl: true,
+          scrollWheelZoom: true,
+          doubleClickZoom: true,
+          touchZoom: true
+        }).setView([20.5937, 78.9629], 5);
+
+        const mapStyles = {
+          standard: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 19
+          }),
+          terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a>',
+            maxZoom: 17
+          }),
+          dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© <a href="https://carto.com/attributions">CARTO</a>',
+            maxZoom: 19
+          })
+        };
+
+        mapStyles.standard.addTo(map);
+
+        markers = L.markerClusterGroup({
+          iconCreateFunction: cluster => L.divIcon({
+            html: `<div class="custom-cluster">${cluster.getChildCount()}</div>`,
+            className: '',
+            iconSize: [30, 30]
+          })
+        }).addTo(map);
+
+        trafficLayer = L.tileLayer(`https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.png?key=${TOMTOM_KEY}`, {
+          opacity: 0.7,
+          maxZoom: 19
+        });
+
+        L.control.scale({ metric: true, imperial: true }).addTo(map);
+        window.mapStyles = mapStyles;
+      } catch (error) {
+        console.error('Map initialization error:', error);
+        showError('Failed to load map. Please check your connection.');
+      }
+    }
+
+    function setupMapControls() {
+      const buttons = {
+        standard: document.getElementById('standardView'),
+        terrain: document.getElementById('terrainView'),
+        dark: document.getElementById('darkView'),
+        traffic: document.getElementById('trafficToggle'),
+        fullscreen: document.getElementById('fullscreenBtn')
+      };
+
+      buttons.standard.addEventListener('click', () => switchMapStyle('standard', buttons));
+      buttons.terrain.addEventListener('click', () => switchMapStyle('terrain', buttons));
+      buttons.dark.addEventListener('click', () => switchMapStyle('dark', buttons));
+
+      let trafficVisible = false;
+      buttons.traffic.addEventListener('click', () => {
+        trafficVisible = !trafficVisible;
+        if (trafficVisible && trafficLayer) {
+          trafficLayer.addTo(map);
+          buttons.traffic.classList.add('active');
+        } else if (trafficLayer) {
+          map.removeLayer(trafficLayer);
+          buttons.traffic.classList.remove('active');
+        }
+      });
+
+      buttons.fullscreen.addEventListener('click', () => {
+        const mapContainer = document.querySelector('.map-container');
+        if (!document.fullscreenElement) {
+          mapContainer.requestFullscreen().then(() => {
+            buttons.fullscreen.innerHTML = '<i class="fas fa-compress"></i>';
+            if (map) map.invalidateSize();
+          }).catch(() => {});
+        } else {
+          document.exitFullscreen().then(() => {
+            buttons.fullscreen.innerHTML = '<i class="fas fa-expand"></i>';
+            if (map) map.invalidateSize();
+          }).catch(() => {});
+        }
+      });
+    }
+
+    function switchMapStyle(style, buttons) {
+      if (!window.mapStyles || !map) return;
+      Object.values(window.mapStyles).forEach(layer => map.removeLayer(layer));
+      window.mapStyles[style].addTo(map);
+      Object.values(buttons).forEach(btn => btn.classList.remove('active'));
+      buttons[style].classList.add('active');
+    }
+
+    function addAutocomplete() {
+      const geocoder = L.Control.Geocoder.tomtom(TOMTOM_KEY);
+      const inputs = [
+        { element: document.getElementById('origin'), list: 'origin-list' },
+        { element: document.getElementById('destination'), list: 'destination-list' }
+      ];
+
+      inputs.forEach(({ element, list }) => {
+        element.addEventListener('input', debounce(e => {
+          const query = e.target.value;
+          if (query.length < 3) return;
+          geocoder.geocode(query, results => {
+            const datalist = document.getElementById(list);
+            datalist.innerHTML = results.slice(0, 5).map(r => `<option value="${r.name}">${r.name}</option>`).join('');
+          }, error => {
+            console.error('Autocomplete error:', error);
+          });
+        }, 300));
+      });
+    }
+
+    function debounce(func, wait) {
+      let timeout;
+      return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+      };
+    }
+
+    async function geocode(address) {
+      try {
+        const response = await axios.get(`https://api.tomtom.com/search/2/geocode/${encodeURIComponent(address)}.json`, {
+          params: { key: TOMTOM_KEY, limit: 1 }
+        });
+        const result = response.data.results[0];
+        return result ? [result.position.lat, result.position.lon] : null;
+      } catch (error) {
+        console.error('Geocode error:', error.message);
         return null;
       }
     }
 
-    // Draw route polyline on map from array of lat/lng points
-    function drawRouteOnMap(points) {
+    async function fetchRoutePoints(start, end) {
+      try {
+        const response = await axios.get(`https://api.tomtom.com/routing/1/calculateRoute/${start.join(',')}:${end.join(',')}/json`, {
+          params: { key: TOMTOM_KEY, traffic: true, travelMode: 'car' }
+        });
+        const route = response.data.routes[0];
+        const delay = route.summary.trafficDelayInSeconds || 0;
+        return {
+          points: route.legs[0].points.map(p => [p.latitude, p.longitude]),
+          stats: {
+            distance: route.summary.lengthInMeters || 0,
+            time: route.summary.travelTimeInSeconds || 0,
+            status: delay > 300 ? 'Severe' : delay > 180 ? 'Heavy' : delay > 60 ? 'Moderate' : 'Light',
+            type: 'Primary'
+          }
+        };
+      } catch (error) {
+        console.error('Route fetch error:', error.message);
+        return { points: [], stats: {} };
+      }
+    }
+
+    function drawRouteOnMap(points, stops = [], stats = {}) {
+      if (!map || !markers) return;
       if (routeLayer) {
         map.removeLayer(routeLayer);
+        routeLayer = null;
       }
-      routeLayer = L.polyline(points, { color: "#2563eb", weight: 5, opacity: 0.8 }).addTo(map);
-      map.fitBounds(routeLayer.getBounds());
+      markers.clearLayers();
+
+      stops.forEach((stop, i) => {
+        if (stop.coords) {
+          const marker = L.marker([stop.coords[0], stop.coords[1]], {
+            icon: L.divIcon({
+              html: `<i class="fas fa-map-marker-alt" style="color: ${i === 0 ? '#10b981' : i === stops.length - 1 ? '#ef4444' : '#4facfe'}; font-size: 20px;"></i>`,
+              className: 'custom-marker',
+              iconSize: [20, 20],
+              iconAnchor: [10, 20]
+            })
+          }).addTo(markers).bindPopup(`<b>${stop.address}</b><br>Stop ${i + 1}`);
+        }
+      });
+
+      if (points.length) {
+        routeLayer = L.polyline(points, {
+          color: '#4facfe',
+          weight: 5,
+          opacity: 0.8,
+          className: 'animated-route'
+        }).addTo(map);
+        map.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
+      }
+
+      const mapStats = document.getElementById('mapStats');
+      document.getElementById('totalDistance').textContent = stats.distance ? `${(stats.distance / 1000).toFixed(2)} km` : '--';
+      document.getElementById('totalTime').textContent = stats.time ? `${(stats.time / 60).toFixed(1)} min` : '--';
+      document.getElementById('trafficStatus').textContent = stats.status || '--';
+      document.getElementById('routeType').textContent = stats.type || '--';
+      mapStats.style.display = points.length ? 'grid' : 'none';
     }
 
-    // Fetch route points between origin and destination using TomTom Routing API (with traffic)
-    async function fetchRoutePoints(originCoords, destinationCoords) {
-      const tomtomKey = "y3lqXrAZjVCThGRsEFVLiiJb5GSUpmI1";
-      const from = originCoords.join(",");
-      const to = destinationCoords.join(",");
-      try {
-        const response = await axios.get(
-          `https://api.tomtom.com/routing/1/calculateRoute/${from}:${to}/json`,
-          {
-            params: {
-              key: tomtomKey,
-              traffic: true,
-              travelMode: "car",
-            },
+    function setButtonLoading(button, loading) {
+      if (!button) return;
+      button.disabled = loading;
+      button.classList.toggle('loading', loading);
+    }
+
+    function showError(message, outputElement = null) {
+      if (outputElement) {
+        outputElement.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+        outputElement.className = 'output-panel error';
+      } else {
+        alert(message);
+      }
+    }
+
+    function addFormHandlers() {
+      const delayForm = document.getElementById('delayForm');
+      if (delayForm) {
+        delayForm.addEventListener('submit', async e => {
+          e.preventDefault();
+          const button = e.target.querySelector('button[type="submit"]');
+          const output = document.getElementById('delayOutput');
+          const origin = document.getElementById('origin').value.trim();
+          const destination = document.getElementById('destination').value.trim();
+          const timestamp = document.getElementById('timestamp').value.trim();
+
+          if (!origin || !destination || !timestamp) {
+            showError('All fields are required.', output);
+            return;
           }
-        );
-        const points = response.data.routes[0].legs[0].points;
-        return points.map((p) => [p.latitude, p.longitude]);
-      } catch {
-        return [];
-      }
-    }
 
-    // Traffic level descriptions
-    function getTrafficDescription(level) {
-      if (level >= 8) return "Severe Traffic";
-      if (level >= 6) return "Heavy Traffic";
-      if (level >= 4) return "Moderate Traffic";
-      if (level >= 2) return "Light Traffic";
-      return "Free Flowing";
-    }
+          setButtonLoading(button, true);
+          output.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+          output.className = 'output-panel';
 
-    // Traffic color for styling
-    function getTrafficColor(level) {
-      if (level >= 8) return "darkred";
-      if (level >= 6) return "orangered";
-      if (level >= 4) return "orange";
-      if (level >= 2) return "yellowgreen";
-      return "green";
-    }
+          try {
+            const res = await axios.post(`${API_BASE}/predict-delay`, { origin, destination, timestamp });
+            if (res.data.error) throw new Error(res.data.error);
 
-    // Handle delay prediction form submit
-    document.getElementById("delayForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const origin = document.getElementById("origin").value.trim();
-      const destination = document.getElementById("destination").value.trim();
-      const timestamp = document.getElementById("timestamp").value.trim();
-      const output = document.getElementById("delayOutput");
+            const { predicted_delay_minutes, traffic_level, weather, base_travel_minutes, total_estimated_time } = res.data;
+            const statusColor = traffic_level >= 8 ? '#ef4444' : traffic_level >= 6 ? '#f97316' : traffic_level >= 4 ? '#eab308' : '#10b981';
+            const statusDesc = traffic_level >= 8 ? 'Severe' : traffic_level >= 6 ? 'Heavy' : traffic_level >= 4 ? 'Moderate' : 'Light';
+            const statusIcon = traffic_level >= 8 ? 'fa-exclamation-triangle' : traffic_level >= 6 ? 'fa-car-crash' : 'fa-car';
 
-      if (!origin || !destination || !timestamp) {
-        output.textContent = "Please fill all fields.";
-        return;
-      }
+            output.innerHTML = `
+              <div style="display: grid; gap: 0.8rem;">
+                <div><strong>Delay:</strong> ${predicted_delay_minutes.toFixed(1)} min</div>
+                <div class="traffic-badge" style="background: ${statusColor}20; color: ${statusColor}; border-color: ${statusColor}40;">
+                  <i class="fas ${statusIcon}"></i> ${statusDesc} (${traffic_level}/10)
+                </div>
+                <div><strong>Weather:</strong> ${weather}</div>
+                <div><strong>Base Time:</strong> ${base_travel_minutes.toFixed(1)} min</div>
+                <div><strong>Total Time:</strong> ${total_estimated_time.toFixed(1)} min</div>
+              </div>`;
+            output.className = 'output-panel success';
 
-      output.textContent = "Predicting delay...";
-
-      try {
-        const res = await axios.post(`${API_BASE}/predict-delay`, {
-          origin,
-          destination,
-          timestamp,
+            const originCoords = await geocode(origin);
+            const destCoords = await geocode(destination);
+            if (originCoords && destCoords) {
+              const routeData = await fetchRoutePoints(originCoords, destCoords);
+              if (routeData.points.length) {
+                drawRouteOnMap(routeData.points, [
+                  { address: origin, coords: originCoords },
+                  { address: destination, coords: destCoords }
+                ], routeData.stats);
+              } else {
+                showError('Failed to fetch route data.', output);
+              }
+            } else {
+              showError('Invalid origin or destination address.', output);
+            }
+          } catch (error) {
+            showError(`Error: ${error.message}`, output);
+          } finally {
+            setButtonLoading(button, false);
+          }
         });
-
-        if (res.data.error) {
-          output.innerHTML = `<span style="color:#f87171;">Error: ${res.data.error}</span>`;
-          return;
-        }
-
-        const {
-          predicted_delay_minutes,
-          traffic_level,
-          weather,
-          base_travel_minutes,
-          total_estimated_time,
-        } = res.data;
-
-        const trafficDesc = getTrafficDescription(traffic_level);
-        const trafficColor = getTrafficColor(traffic_level);
-
-        output.innerHTML = `
-          <strong>Predicted Delay:</strong> ${predicted_delay_minutes.toFixed(2)} min<br>
-          <strong>Traffic Level:</strong> 
-            <span class="traffic-badge" style="background-color: ${trafficColor};">${trafficDesc} (${traffic_level} / 10)</span><br>
-          <strong>Weather:</strong> ${weather}<br>
-          <strong>Base Travel Time:</strong> ${base_travel_minutes.toFixed(1)} min<br>
-          <strong>Total Estimated Time:</strong> ${total_estimated_time.toFixed(1)} min
-        `;
-
-        // Show route on map
-        const originCoords = await geocode(origin);
-        const destinationCoords = await geocode(destination);
-        if (originCoords && destinationCoords) {
-          const routePoints = await fetchRoutePoints(originCoords, destinationCoords);
-          if (routePoints.length > 0) drawRouteOnMap(routePoints);
-        }
-      } catch (err) {
-        output.innerHTML = `<span style="color:#f87171;">Request failed: ${err.message}</span>`;
-      }
-    });
-
-    // Handle route optimization form submit
-    document.getElementById("routeForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const stopsText = document.getElementById("stops").value.trim();
-      const output = document.getElementById("routeOutput");
-
-      if (!stopsText) {
-        output.textContent = "Please enter at least one stop.";
-        return;
       }
 
-      output.textContent = "Optimizing route...";
+      const routeForm = document.getElementById('routeForm');
+      if (routeForm) {
+        routeForm.addEventListener('submit', async e => {
+          e.preventDefault();
+          const button = e.target.querySelector('button[type="submit"]');
+          const output = document.getElementById('routeOutput');
+          const stopsText = document.getElementById('stops').value.trim();
 
-      const stops = stopsText
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((address) => ({ address }));
+          if (!stopsText) {
+            showError('Enter at least one destination.', output);
+            return;
+          }
 
-      try {
-        const res = await axios.post(`${API_BASE}/optimize-route`, {
-          stops,
+          setButtonLoading(button, true);
+          output.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Optimizing...';
+          output.className = 'output-panel';
+
+          const stops = stopsText.split('\n').map(s => s.trim()).filter(Boolean).map(address => ({ address }));
+
+          try {
+            const res = await axios.post(`${API_BASE}/optimize-route`, { stops });
+            if (res.data.error) throw new Error(res.data.error);
+
+            const geocodedStops = await Promise.all(res.data.optimized_order.map(async address => ({
+              address,
+              coords: await geocode(address)
+            })));
+
+            output.innerHTML = `
+              <div style="display: grid; gap: 1rem;">
+                <div>
+                  <h4 style="color: #f97316;">Original Order:</h4>
+                  ${res.data.original_order.map((s, i) => `<div>${i + 1}. ${s}</div>`).join('')}
+                </div>
+                <div>
+                  <h4 style="color: #10b981;">Optimized Route:</h4>
+                  ${res.data.optimized_order.map((s, i) => `<div>${i + 1}. ${s}</div>`).join('')}
+                </div>
+              </div>`;
+            output.className = 'output-panel success';
+
+            if (geocodedStops.length >= 2 && geocodedStops.every(s => s.coords)) {
+              let totalDistance = 0, totalTime = 0, worstTraffic = 'Light';
+              const points = [];
+              for (let i = 0; i < geocodedStops.length - 1; i++) {
+                const routeData = await fetchRoutePoints(geocodedStops[i].coords, geocodedStops[i + 1].coords);
+                if (routeData.points.length) {
+                  points.push(...routeData.points);
+                  totalDistance += routeData.stats.distance || 0;
+                  totalTime += routeData.stats.time || 0;
+                  const statusOrder = ['Severe', 'Heavy', 'Moderate', 'Light'];
+                  worstTraffic = statusOrder.indexOf(routeData.stats.status) < statusOrder.indexOf(worstTraffic) ? 
+                                 routeData.stats.status : worstTraffic;
+                }
+              }
+              if (points.length) {
+                drawRouteOnMap(points, geocodedStops, {
+                  distance: totalDistance,
+                  time: totalTime,
+                  status: worstTraffic,
+                  type: 'Optimized'
+                });
+              } else {
+                showError('Failed to fetch route data for stops.', output);
+              }
+            } else {
+              showError('Could not geocode all stops.', output);
+            }
+          } catch (error) {
+            showError(`Error: ${error.message}`, output);
+          } finally {
+            setButtonLoading(button, false);
+          }
         });
-
-        if (res.data.error) {
-          output.innerHTML = `<span style="color:#f87171;">Error: ${res.data.error}</span>`;
-          return;
-        }
-
-        output.innerHTML = `
-          <strong>Original Order:</strong><br>${res.data.original_order.join(
-            "<br>"
-          )}<br><br>
-          <strong>Optimized Order:</strong><br>${res.data.optimized_order.join("<br>")}
-        `;
-      } catch (err) {
-        output.innerHTML = `<span style="color:#f87171;">Request failed: ${err.message}</span>`;
       }
-    });
+    }
   </script>
 </body>
 </html>
