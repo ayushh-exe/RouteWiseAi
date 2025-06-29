@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse
 import os
 from backend.router import router as api_router
 
+
 app = FastAPI(
     title="RouteWise AI",
     description="Real-Time Multi-Stop Routing with AI Optimization",
