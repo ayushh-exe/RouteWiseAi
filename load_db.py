@@ -17,13 +17,11 @@ engine = create_engine(DATABASE_URL)
 def create_tables():
     """Creates all required tables in the database."""
     with engine.connect() as connection:
-
+        # Drop existing tables to start fresh
         connection.execute(text("DROP TABLE IF EXISTS challans CASCADE;"))
-        connection.execute(text("DROP TABLE IF EXISTS users CASCADE;"))
         connection.execute(text("DROP TABLE IF EXISTS vehicles CASCADE;"))
+        connection.execute(text("DROP TABLE IF EXISTS users CASCADE;"))
         connection.execute(text("DROP TABLE IF EXISTS transport_options CASCADE;"))
-        connection.execute(text("DROP TABLE IF EXISTS bookings CASCADE;"))
-        connection.execute(text("DROP TABLE IF EXISTS transport_update_logs CASCADE;"))
 
         # ---------- Create users table ----------
         connection.execute(text("""
@@ -39,7 +37,7 @@ def create_tables():
         connection.execute(text("""
         CREATE TABLE vehicles (
             id SERIAL PRIMARY KEY,
-            color VARCHAR(100),
+            make VARCHAR(100),
             model VARCHAR(100),
             year INTEGER,
             license_plate VARCHAR(50) UNIQUE,
@@ -75,31 +73,9 @@ def create_tables():
         );
         """))
 
-        # ---------- Create bookings table ----------
-        connection.execute(text("""
-        CREATE TABLE bookings (
-            booking_id SERIAL PRIMARY KEY,
-            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-            transport_id INTEGER REFERENCES transport_options(id) ON DELETE CASCADE,
-            booking_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            status VARCHAR(50) NOT NULL
-        );
-        """))
-
-        # ---------- Create transport_update_logs table ----------
-        connection.execute(text("""
-        CREATE TABLE transport_update_logs (
-            log_id SERIAL PRIMARY KEY,
-            transport_id INTEGER REFERENCES transport_options(id) ON DELETE CASCADE,
-            old_fare INTEGER,
-            new_fare INTEGER,
-            change_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        """))
-
         connection.commit()
 
-    print("✅ Tables 'users', 'vehicles', 'challans', 'transport_options', 'bookings', and 'transport_update_logs' created successfully.")
+    print("✅ Tables 'users', 'vehicles', 'challans', and 'transport_options' created successfully.")
 
 
 def insert_data(file_path, transport_type):
