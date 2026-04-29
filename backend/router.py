@@ -7,7 +7,7 @@ from sqlalchemy import text
 from backend.database import get_db
 from backend.delay_predictor import predict_delay
 from backend.optimizer import optimize_route
-from backend.tomtom_api import get_route_info, get_route_path, geocode_place
+from backend.tomtom_api import get_route_info, geocode_place
 from backend.weather_api import get_current_weather
 from backend.utils import km_from_travel_time, normalize_traffic_delay
 
@@ -55,14 +55,9 @@ def predict_delay_endpoint(request: DelayRequest):
     if not origin_coords or not dest_coords:
         raise HTTPException(status_code=404, detail="Could not geocode origin or destination.")
 
-    travel_time_sec, traffic_delay_sec = get_route_info(origin_coords, dest_coords)
-    if travel_time_sec is None or traffic_delay_sec is None:
+    base_travel_time_sec, traffic_delay_sec, distance_km, route_path = get_route_info(origin_coords, dest_coords)
+    if base_travel_time_sec is None or traffic_delay_sec is None:
         raise HTTPException(status_code=503, detail="Unable to fetch route data from provider.")
-
-    # Fetch the detailed route path for visualization
-    route_path = get_route_path(origin_coords, dest_coords)
-
-    distance_km = km_from_travel_time(travel_time_sec)
     weather = get_current_weather(request.origin) or "clear"
     input_data = {
         "distance_km": distance_km,
@@ -71,7 +66,7 @@ def predict_delay_endpoint(request: DelayRequest):
         "timestamp": request.timestamp
     }
     delay = predict_delay(input_data)
-    base_travel_minutes = travel_time_sec / 60
+    base_travel_minutes = base_travel_time_sec / 60
     total_estimated_time = base_travel_minutes + delay
 
     if delay > 45: traffic_level = 9
@@ -110,8 +105,9 @@ def optimize_route_endpoint(request: RouteRequest):
             dest_stop = optimized_stops[i+1]
             origin_coords = (origin_stop['lat'], origin_stop['lon'])
             dest_coords = (dest_stop['lat'], dest_stop['lon'])
-            segment_path = get_route_path(origin_coords, dest_coords)
-            full_route_path.extend(segment_path)
+            _, _, _, segment_path = get_route_info(origin_coords, dest_coords)
+            if segment_path:
+                full_route_path.extend(segment_path)
 
     return OptimizedRouteResponse(
         optimized_stops=[OptimizedStop(**s) for s in optimized_stops],
