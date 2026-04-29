@@ -16,12 +16,19 @@ networkx
 
 # API Requests
 requests
+aiohttp
 
 # Environment Variables Handling
 python-dotenv
 
 # Logging & Debugging
 loguru
+
+# Validation & Security
+pydantic
+email-validator
+passlib[bcrypt]
+bcrypt
 
 
 sqlalchemy
