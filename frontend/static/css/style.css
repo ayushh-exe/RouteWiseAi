@@ -2,6 +2,158 @@ body {
     font-family: 'Inter', sans-serif;
     background-color: #111827;
 }
+
+/* --- AUTH PAGES --- */
+.login-container-anim {
+    animation: authSlideUp 0.6s ease-out;
+}
+@keyframes authSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.auth-floating-shape {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    z-index: 1;
+}
+.auth-shape-1 {
+    width: 200px; height: 200px;
+    top: -60px; right: -40px;
+    animation: authFloat 8s ease-in-out infinite;
+}
+.auth-shape-2 {
+    width: 120px; height: 120px;
+    bottom: 30px; left: -30px;
+    animation: authFloat 10s ease-in-out infinite reverse;
+}
+.auth-shape-3 {
+    width: 80px; height: 80px;
+    top: 40%; right: 20%;
+    animation: authFloat 6s ease-in-out infinite 1s;
+}
+@keyframes authFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(15px, -20px) scale(1.1); }
+}
+.auth-feature-item {
+    opacity: 0;
+    animation: authFeatureFade 0.5s ease-out forwards;
+}
+@keyframes authFeatureFade {
+    from { opacity: 0; transform: translateX(-15px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.auth-input {
+    background: rgba(255, 255, 255, 0.04);
+    font-size: 0.95rem;
+}
+.auth-input:focus {
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 0 20px rgba(128, 90, 213, 0.15);
+}
+.auth-input::placeholder {
+    color: #6b7280;
+}
+.auth-submit-btn {
+    background: linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #8b5cf6 100%);
+    background-size: 200% 200%;
+    animation: authGradientShift 3s ease infinite;
+    position: relative;
+    overflow: hidden;
+}
+.auth-submit-btn::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
+    animation: authShine 4s ease-in-out infinite;
+}
+@keyframes authGradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+@keyframes authShine {
+    0% { transform: translateX(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) rotate(45deg); }
+}
+/* MapSquad Badge */
+.mapsquad-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 11px;
+    color: #c4b5fd;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(99, 102, 241, 0.1));
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.15), inset 0 0 15px rgba(139, 92, 246, 0.05);
+    animation: badgePulse 3s ease-in-out infinite;
+}
+.mapsquad-badge span {
+    font-weight: 800;
+    background: linear-gradient(90deg, #a78bfa, #818cf8, #c084fc);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: badgeGradientText 3s linear infinite;
+}
+.mapsquad-badge i {
+    font-size: 13px;
+    color: #a78bfa;
+    animation: badgeIconBounce 2s ease-in-out infinite;
+}
+@keyframes badgePulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.15), inset 0 0 15px rgba(139, 92, 246, 0.05); }
+    50% { box-shadow: 0 0 25px rgba(139, 92, 246, 0.3), inset 0 0 20px rgba(139, 92, 246, 0.1); }
+}
+@keyframes badgeGradientText {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+}
+@keyframes badgeIconBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+}
+/* Team Member Chips */
+.team-members-anim {
+    animation: authSlideUp 0.6s ease-out 0.2s both;
+}
+.member-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: rgba(20, 20, 40, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    font-size: 10px;
+    color: #9ca3af;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+.member-chip i {
+    font-size: 10px;
+    color: #a78bfa;
+    opacity: 0.8;
+}
+.member-chip:hover {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(167, 139, 250, 0.4);
+    color: #e5e7eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+}
+.member-chip:hover i {
+    opacity: 1;
+    color: #c4b5fd;
+}
 .main-bg {
     background-color: #1a1a2e;
     background-image: radial-gradient(circle at 25% 30%, rgba(128, 90, 213, 0.1), transparent 40%),
@@ -114,3 +266,94 @@ input, textarea, select {
     transition: max-height 0.5s ease-out;
 }
 
+/* --- PROFILE STYLES --- */
+.profile-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2.5px solid #805ad5;
+    background: linear-gradient(135deg, #2d3748, #1a202c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(128, 90, 213, 0.3);
+    transition: all 0.3s ease;
+}
+.profile-avatar:hover {
+    box-shadow: 0 0 30px rgba(128, 90, 213, 0.5);
+    transform: scale(1.05);
+}
+.profile-avatar span {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #805ad5;
+    letter-spacing: 1px;
+}
+.profile-card-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.profile-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(128, 90, 213, 0.15);
+}
+.profile-field-group {
+    transition: all 0.3s ease;
+}
+.profile-edit-input,
+.vehicle-edit-input {
+    background-color: #2d3748;
+    transition: all 0.3s ease;
+    animation: fadeInInput 0.3s ease;
+}
+.profile-edit-input:focus,
+.vehicle-edit-input:focus {
+    box-shadow: 0 0 15px rgba(128, 90, 213, 0.3);
+}
+@keyframes fadeInInput {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.profile-editing {
+    border-color: rgba(128, 90, 213, 0.3) !important;
+    box-shadow: 0 0 20px rgba(128, 90, 213, 0.1) inset;
+}
+
+/* --- WEATHER CHUNK CARDS --- */
+.weather-chunk-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: fadeInChunk 0.5s ease forwards;
+    opacity: 0;
+}
+.weather-chunk-card:nth-child(1) { animation-delay: 0.05s; }
+.weather-chunk-card:nth-child(2) { animation-delay: 0.1s; }
+.weather-chunk-card:nth-child(3) { animation-delay: 0.15s; }
+.weather-chunk-card:nth-child(4) { animation-delay: 0.2s; }
+.weather-chunk-card:nth-child(5) { animation-delay: 0.25s; }
+.weather-chunk-card:nth-child(6) { animation-delay: 0.3s; }
+.weather-chunk-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(128, 90, 213, 0.2);
+}
+@keyframes fadeInChunk {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.weather-timeline {
+    position: relative;
+}
+/* Weather dropdown */
+.weather-dropdown-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.weather-dropdown-body.open {
+    max-height: 2000px;
+}
+.weather-dropdown-icon {
+    transition: transform 0.3s ease;
+}
+.rotate-180 {
+    transform: rotate(180deg);
+}
