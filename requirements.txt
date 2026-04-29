@@ -24,3 +24,7 @@ python-dotenv
 loguru
 
 
+sqlalchemy
+psycopg2-binary
+python-dotenv
+gunicorn
