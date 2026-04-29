@@ -1,13 +1,25 @@
+# Virtual environment
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment variables
 .env
-load_db.py
 
-backend/database.py
-backend/venv/
-backend/__pycache__/
-backend/__init__.py
+# OS files
+.DS_Store
+Thumbs.db
 
-bus_dataset_india.json
-flight_dataset_india.json
-train_dataset_india.json
+# IDE
+.vscode/
+.idea/
 
+# Logs
+*.log
 
+# Session files
+*.session.sql
