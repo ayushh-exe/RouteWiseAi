@@ -12,6 +12,12 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable not set. Please create a .env file.")
 
+DATABASE_URL = DATABASE_URL.strip()
+
+# SQLAlchemy 1.4+ requires "postgresql://" instead of "postgres://"
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 engine = create_engine(DATABASE_URL)
 
 def create_tables():
@@ -37,11 +43,12 @@ def create_tables():
         connection.execute(text("""
         CREATE TABLE vehicles (
             id SERIAL PRIMARY KEY,
-            make VARCHAR(100),
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            vehicle_type VARCHAR(20) NOT NULL,
+            license_plate VARCHAR(50),
             model VARCHAR(100),
-            year INTEGER,
-            license_plate VARCHAR(50) UNIQUE,
-            owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+            color VARCHAR(50),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """))
 
@@ -87,56 +94,66 @@ def insert_data(file_path, transport_type):
     with open(file_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
-    with engine.connect() as connection:
-        for route in data.get('routes', []):
-            origin = route.get('from')
-            destination = route.get('to')
+    records = []
+    for route in data.get('routes', []):
+        origin = route.get('from')
+        destination = route.get('to')
 
-            for operator in route.get('operators', []):
-                operator_name = operator.get('airline') or operator.get('operator') or 'N/A'
-                departures = operator.get('departures', [operator])
+        for operator in route.get('operators', []):
+            operator_name = operator.get('airline') or operator.get('operator') or 'N/A'
+            departures = operator.get('departures', [operator])
 
-                for dep in departures:
-                    fare = dep.get('fare')
-                    if not fare:
-                        continue
+            for dep in departures:
+                fare = dep.get('fare')
+                if not fare:
+                    continue
 
-                    insert_query = text("""
-                    INSERT INTO transport_options (
-                        transport_type, origin_city, destination_city, operator_name,
-                        departure_time, arrival_time, duration, fare, seats_available, details
-                    ) VALUES (
-                        :tt, :origin, :dest, :op_name, :dep_time, :arr_time,
-                        :dur, :fare, :seats, CAST(:details AS JSONB)
-                    );
-                    """)
+                details_dict = {
+                    "bus_type": operator.get("bus_type"),
+                    "train_class": operator.get("train_class"),
+                    "cabin_class": operator.get("cabin_class"),
+                    "operator_type": operator.get("operator_type"),
+                    "distance_km_est": operator.get("distance_km_est")
+                }
+                details_json_string = json.dumps({k: v for k, v in details_dict.items() if v is not None})
 
-                    details_dict = {
-                        "bus_type": operator.get("bus_type"),
-                        "train_class": operator.get("train_class"),
-                        "cabin_class": operator.get("cabin_class"),
-                        "operator_type": operator.get("operator_type"),
-                        "distance_km_est": operator.get("distance_km_est")
-                    }
+                records.append({
+                    "tt": transport_type,
+                    "origin": origin,
+                    "dest": destination,
+                    "op_name": operator_name,
+                    "dep_time": dep.get('departure'),
+                    "arr_time": dep.get('arrival'),
+                    "dur": dep.get('duration'),
+                    "fare": int(fare),
+                    "seats": dep.get('seats_available'),
+                    "details": details_json_string
+                })
 
-                    details_json_string = json.dumps({k: v for k, v in details_dict.items() if v is not None})
+    if records:
+        with engine.connect() as connection:
+            raw_conn = connection.connection
+            # If using SQLAlchemy 2.0 with a wrapper, we might need driver_connection
+            if hasattr(raw_conn, 'driver_connection'):
+                raw_conn = raw_conn.driver_connection
+            cursor = raw_conn.cursor()
+            from psycopg2.extras import execute_values
+            
+            insert_query = """
+            INSERT INTO transport_options (
+                transport_type, origin_city, destination_city, operator_name,
+                departure_time, arrival_time, duration, fare, seats_available, details
+            ) VALUES %s
+            """
+            
+            values = [(r['tt'], r['origin'], r['dest'], r['op_name'], r['dep_time'], r['arr_time'], r['dur'], r['fare'], r['seats'], r['details']) for r in records]
+            
+            # Execute values sends everything in one giant query
+            template = "(%s, %s, %s, %s, %s, %s, %s, %s, %s, CAST(%s AS JSONB))"
+            execute_values(cursor, insert_query, values, template=template)
+            raw_conn.commit()
 
-                    connection.execute(insert_query, {
-                        "tt": transport_type,
-                        "origin": origin,
-                        "dest": destination,
-                        "op_name": operator_name,
-                        "dep_time": dep.get('departure'),
-                        "arr_time": dep.get('arrival'),
-                        "dur": dep.get('duration'),
-                        "fare": int(fare),
-                        "seats": dep.get('seats_available'),
-                        "details": details_json_string
-                    })
-
-        connection.commit()
-
-    print(f"✅ Successfully inserted data from {file_path}")
+    print(f"✅ Successfully inserted {len(records)} records from {file_path}")
 
 
 if __name__ == "__main__":
