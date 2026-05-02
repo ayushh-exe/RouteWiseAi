@@ -25,6 +25,13 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable not set.")
+
+DATABASE_URL = DATABASE_URL.strip()
+
+# SQLAlchemy 1.4+ requires "postgresql://" instead of "postgres://"
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 engine = create_engine(DATABASE_URL)
 
 app = FastAPI()
@@ -70,6 +77,21 @@ class DelayRequest(BaseModel):
     origin_lat: Optional[float] = None
     origin_lon: Optional[float] = None
 
+class ProfileUpdate(BaseModel):
+    email: EmailStr
+    age: Optional[str] = None
+    gender: Optional[str] = None
+    nationality: Optional[str] = None
+    license: Optional[str] = None
+    address: Optional[str] = None
+
+class VehicleUpdate(BaseModel):
+    email: EmailStr
+    vehicle_type: str
+    license_plate: str
+    model: str
+    color: str
+
 # --- User Helper Functions ---
 def verify_password(plain_password, hashed_password):
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
@@ -113,19 +135,83 @@ def signup_user(user: UserCreate):
 
 @app.post("/login/")
 def login_user(form_data: UserLogin):
-    """Handles user login."""
     with engine.connect() as connection:
-        query = text("SELECT * FROM users WHERE email = :email")
-        user = connection.execute(query, {"email": form_data.email}).fetchone()
-
-        if not user or not verify_password(form_data.password, user.hashed_password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        query = text("SELECT id, username, hashed_password, age, gender, nationality, license, address FROM users WHERE email = :email")
+        result = connection.execute(query, {"email": form_data.email}).fetchone()
         
-        return {"message": "Login successful!", "username": user.username}
+        if not result:
+            raise HTTPException(status_code=400, detail="Invalid email or password")
+            
+        user_id, username, hashed_password, age, gender, nationality, license_num, address = result
+        
+        if not verify_password(form_data.password, hashed_password):
+            raise HTTPException(status_code=400, detail="Invalid email or password")
+            
+        vehicles_query = text("SELECT vehicle_type, license_plate, model, color FROM vehicles WHERE user_id = :uid")
+        vehicles_res = connection.execute(vehicles_query, {"uid": user_id}).fetchall()
+        vehicles = [{"type": v[0], "plate": v[1], "model": v[2], "color": v[3]} for v in vehicles_res]
+
+        return {
+            "message": "Login successful", 
+            "username": username,
+            "profile": {
+                "age": age or "",
+                "gender": gender or "",
+                "nationality": nationality or "",
+                "license": license_num or "",
+                "address": address or ""
+            },
+            "vehicles": vehicles
+        }
+
+@app.post("/update-profile/")
+def update_profile(data: ProfileUpdate):
+    with engine.connect() as connection:
+        query = text("""
+            UPDATE users SET 
+                age = :age, gender = :gender, nationality = :nationality, 
+                license = :license, address = :address 
+            WHERE email = :email
+        """)
+        res = connection.execute(query, {
+            "age": data.age,
+            "gender": data.gender,
+            "nationality": data.nationality,
+            "license": data.license,
+            "address": data.address,
+            "email": data.email
+        })
+        connection.commit()
+        if res.rowcount == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"message": "Profile updated successfully"}
+
+@app.post("/update-vehicle/")
+def update_vehicle(data: VehicleUpdate):
+    with engine.connect() as connection:
+        user_res = connection.execute(text("SELECT id FROM users WHERE email = :email"), {"email": data.email}).fetchone()
+        if not user_res:
+            raise HTTPException(status_code=404, detail="User not found")
+        uid = user_res[0]
+        
+        check_q = text("SELECT id FROM vehicles WHERE user_id = :uid AND vehicle_type = :vtype")
+        v_res = connection.execute(check_q, {"uid": uid, "vtype": data.vehicle_type}).fetchone()
+        
+        if v_res:
+            upd_q = text("""
+                UPDATE vehicles SET license_plate = :plate, model = :model, color = :color 
+                WHERE id = :vid
+            """)
+            connection.execute(upd_q, {"plate": data.license_plate, "model": data.model, "color": data.color, "vid": v_res[0]})
+        else:
+            ins_q = text("""
+                INSERT INTO vehicles (user_id, vehicle_type, license_plate, model, color)
+                VALUES (:uid, :vtype, :plate, :model, :color)
+            """)
+            connection.execute(ins_q, {"uid": uid, "vtype": data.vehicle_type, "plate": data.license_plate, "model": data.model, "color": data.color})
+            
+        connection.commit()
+        return {"message": "Vehicle updated successfully"}
 
 import re
 
