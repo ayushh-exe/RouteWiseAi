@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const personalInfoCard = document.getElementById('personal-info-card');
     const editVehicleBtns = document.querySelectorAll('.edit-vehicle-btn');
 
+    // --- USER STATE ---
+    let currentEmail = null;
+
     // --- AUTO-LOCATION DETECTION ---
     let isUserEditing = false;
     let isUserEditingStart = false;
@@ -195,8 +198,27 @@ document.addEventListener('DOMContentLoaded', () => {
             initMap();
             showView(dashboardView);
             // Update profile details
+            currentEmail = email;
             document.getElementById('profile-name').textContent = data.username;
             document.getElementById('profile-email').textContent = email;
+            if (data.profile) {
+                document.getElementById('profile-age').textContent = data.profile.age || '-';
+                document.getElementById('profile-gender').textContent = data.profile.gender || '-';
+                document.getElementById('profile-nationality').textContent = data.profile.nationality || '-';
+                document.getElementById('profile-license').textContent = data.profile.license || '-';
+                document.getElementById('profile-address').textContent = data.profile.address || '-';
+            }
+            if (data.vehicles) {
+                data.vehicles.forEach(v => {
+                    const type = v.type.toLowerCase();
+                    if (vehicleElements[type]) {
+                        vehicleElements[type].plate.textContent = v.plate || '-';
+                        vehicleElements[type].model.textContent = v.model || '-';
+                        vehicleElements[type].color.textContent = v.color || '-';
+                    }
+                });
+            }
+            
             // Generate avatar initials from username
             const initials = data.username.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
             const initialsEl = document.getElementById('profile-initials');
@@ -480,17 +502,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function exitProfileEditMode(save) {
+    async function exitProfileEditMode(save) {
         isProfileEditing = false;
         personalInfoCard.classList.remove('profile-editing');
         profileEditActions.classList.add('hidden');
         editProfileBtn.querySelector('span').textContent = 'Edit Profile';
         editProfileBtn.disabled = false;
         editProfileBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        
+        if (save) {
+            const payload = {
+                email: currentEmail,
+                age: inlineEditInputs.age.value,
+                gender: inlineEditInputs.gender.value,
+                nationality: inlineEditInputs.nationality.value,
+                license: inlineEditInputs.license.value,
+                address: inlineEditInputs.address.value
+            };
+            try {
+                await fetch('/update-profile/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch(e) { console.error('Failed to save profile', e); }
+        }
+
         Object.keys(inlineEditInputs).forEach(key => {
             const display = profileElements[key];
             const input = inlineEditInputs[key];
-            if (save) display.textContent = input.value;
+            if (save) display.textContent = input.value || '-';
             display.classList.remove('hidden');
             input.classList.add('hidden');
         });
@@ -515,15 +556,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function exitVehicleEditMode(type, save) {
+    async function exitVehicleEditMode(type, save) {
         const data = vehicleElements[type];
         const inputs = vehicleEditInputs[type];
         const actionsDiv = document.getElementById(`${type}-edit-actions`);
         const editBtn = document.querySelector(`.edit-vehicle-btn[data-vehicle="${type}"]`);
         actionsDiv.classList.add('hidden');
         editBtn.classList.remove('hidden');
+        
+        if (save) {
+            const payload = {
+                email: currentEmail,
+                vehicle_type: type,
+                license_plate: inputs.plate.value,
+                model: inputs.model.value,
+                color: inputs.color.value
+            };
+            try {
+                await fetch('/update-vehicle/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch(e) { console.error('Failed to save vehicle', e); }
+        }
+
         Object.keys(data).forEach(key => {
-            if (save) data[key].textContent = inputs[key].value;
+            if (save) data[key].textContent = inputs[key].value || '-';
             data[key].classList.remove('hidden');
             inputs[key].classList.add('hidden');
         });
